@@ -1,0 +1,28 @@
+{
+
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "opencv debuge",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}\\Debugger\\${fileBasenameNoExtension}.exe",
+            //上面这个Debugger是我自己定义的，为了方便放置生成的exe文件
+            "args": [],
+            "stopAtEntry": false, //这里如果为 false，则说明调试直接运行。（反之则停止）
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": true,//是否调用外部cmd
+            "MIMode": "gdb",
+            "miDebuggerPath": "F:\\MinGw\\bin\\gdb.exe",//自己进行设置
+            "setupCommands": [
+                {
+                    "description": "为 gdb 启用整齐打印",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": false
+                }
+            ],
+            "preLaunchTask": "opencv3.5.2"
+        }
+    ]
+}
