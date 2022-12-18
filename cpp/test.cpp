@@ -40,6 +40,14 @@ vector<vector<Point>> getContours(Mat imgage) {
     return biggest;
 }
 
+void drawPoints(Mat image, vector<Point> cPoint, Scalar color) {
+    for (int i = 0; i < cPoint.size(); ++i) {
+        circle(image, cPoint[i], 5, color, FILLED);
+        putText(image, to_string(i), cPoint[i], FONT_HERSHEY_PLAIN, 5, color, 3);
+    }
+    return ;
+}
+
 int main() {
     img = imread(pathname);
 
@@ -66,6 +74,9 @@ int main() {
     imshow("imgContours", imgContours);
 
     // 1.重新排序四个角点
+    drawPoints(img, cPoint[0], Scalar(0, 0, 200));
+    drawPoints(img, cPoint[1], Scalar(0, 0, 200));
+    imshow("img", img);
 
     // 2.仿射变换
 
