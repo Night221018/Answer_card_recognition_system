@@ -8,6 +8,7 @@ using namespace cv;
 
 string pathname = "D:\\Microsoft VS Code\\OpenCV\\cpp\\omr1.jpg";
 Mat img, imgGray, imgBlur, imgCanny, imgContours;
+vector<Point> docPoint_max, docPoint_grade;
 
 vector<vector<Point>> getContours(Mat imgage) {
     // 四个角点，闭合轮廓
@@ -40,12 +41,29 @@ vector<vector<Point>> getContours(Mat imgage) {
     return biggest;
 }
 
+// 画点
 void drawPoints(Mat image, vector<Point> cPoint, Scalar color) {
     for (int i = 0; i < cPoint.size(); ++i) {
         circle(image, cPoint[i], 5, color, FILLED);
         putText(image, to_string(i), cPoint[i], FONT_HERSHEY_PLAIN, 5, color, 3);
     }
     return ;
+}
+
+// 给点重新排序
+vector<Point> reorder(vector<Point> points) {
+    vector<Point> newPoints;
+    vector<int> sumPoints, subPoints;
+    for (int i = 0; i < points.size(); ++i) {
+        sumPoints.push_back(points[i].x + points[i].y);
+        subPoints.push_back(points[i].x - points[i].y);
+    }
+    newPoints.push_back(points[min_element(sumPoints.begin(), sumPoints.end()) - sumPoints.begin()]);
+    newPoints.push_back(points[max_element(subPoints.begin(), subPoints.end()) - subPoints.begin()]);
+    newPoints.push_back(points[min_element(subPoints.begin(), subPoints.end()) - subPoints.begin()]);
+    newPoints.push_back(points[max_element(sumPoints.begin(), sumPoints.end()) - sumPoints.begin()]);
+
+    return newPoints;
 }
 
 int main() {
@@ -77,6 +95,12 @@ int main() {
     drawPoints(img, cPoint[0], Scalar(0, 0, 200));
     drawPoints(img, cPoint[1], Scalar(0, 0, 200));
     imshow("img", img);
+    
+    docPoint_grade = reorder(cPoint[0]);
+    docPoint_max = reorder(cPoint[1]);
+    drawPoints(imgContours, docPoint_max, Scalar(0, 0, 200));
+    drawPoints(imgContours, docPoint_grade, Scalar(0, 0, 200));
+    imshow("imgContours", imgContours);
 
     // 2.仿射变换
 
