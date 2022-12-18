@@ -7,7 +7,7 @@ using namespace std;
 using namespace cv;
 
 string pathname = "D:\\Microsoft VS Code\\OpenCV\\cpp\\omr1.jpg";
-Mat img, imgGray, imgBlur, imgCanny, imgContours;
+Mat img, imgGray, imgBlur, imgCanny, imgContours, imgWarp, imgWarpGrade;
 vector<Point> docPoint_max, docPoint_grade;
 
 vector<vector<Point>> getContours(Mat imgage) {
@@ -66,10 +66,20 @@ vector<Point> reorder(vector<Point> points) {
     return newPoints;
 }
 
+// 仿射变换
+Mat getWarp(Mat image, vector<Point> points, float w, float h) {
+    Mat imgWarp;
+    Point2f src[4] = {points[0], points[1], points[2], points[3]};
+    Point2f dst[4] = {{0.0f, 0.0f}, {w, 0.0f}, {0.0f, h}, {w, h}};
+    Mat matrix = getPerspectiveTransform(src, dst);
+    warpPerspective(image, imgWarp, matrix, Point(w, h));
+    return imgWarp;
+}
+
 int main() {
     img = imread(pathname);
 
-    resize(img, img, Size(400, 400));
+    resize(img, img, Size(500, 500));
     cvtColor(img, imgGray, COLOR_BGR2GRAY);
     GaussianBlur(imgGray, imgBlur, Size(5, 5), 0, 0);
     Canny(imgBlur, imgCanny, 50, 25, 3);
@@ -92,10 +102,9 @@ int main() {
     imshow("imgContours", imgContours);
 
     // 1.重新排序四个角点
-    drawPoints(img, cPoint[0], Scalar(0, 0, 200));
-    drawPoints(img, cPoint[1], Scalar(0, 0, 200));
-    imshow("img", img);
-    
+    // drawPoints(img, cPoint[0], Scalar(0, 0, 200));
+    // drawPoints(img, cPoint[1], Scalar(0, 0, 200));
+    // imshow("img", img);
     docPoint_grade = reorder(cPoint[0]);
     docPoint_max = reorder(cPoint[1]);
     drawPoints(imgContours, docPoint_max, Scalar(0, 0, 200));
@@ -103,6 +112,12 @@ int main() {
     imshow("imgContours", imgContours);
 
     // 2.仿射变换
+    imgWarp = getWarp(img, docPoint_max, 300, 300);
+    imshow("imgWarp", imgWarp);
+
+    imgWarpGrade = getWarp(img, docPoint_grade, 180, 100);
+    imshow("imgWarpGrade", imgWarpGrade);    
+
 
     // 3.图形分割
 
