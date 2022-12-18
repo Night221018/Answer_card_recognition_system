@@ -9,6 +9,7 @@ using namespace cv;
 string pathname = "D:\\Microsoft VS Code\\OpenCV\\cpp\\omr1.jpg";
 Mat img, imgGray, imgBlur, imgCanny, imgContours, imgWarp, imgWarpGrade, imgThre, imgWarpGray, imgWarpGradeGray, imgGradeThre;
 vector<Point> docPoint_max, docPoint_grade;
+vector<Mat> boxes;
 
 vector<vector<Point>> getContours(Mat imgage) {
     // 四个角点，闭合轮廓
@@ -76,6 +77,46 @@ Mat getWarp(Mat image, vector<Point> points, float w, float h) {
     return imgWarp;
 }
 
+// 图像分割
+vector<Mat> splitBox(Mat img) {
+    vector<Mat> boxes;
+    Mat img_cut, rio_img;
+    int m = img.cols / 5;  // 宽度
+    int n = img.rows / 5;  // 高度
+    for (int i = 0; i < 5; ++i) {
+        for (int j = 0; j < 5; ++j) {
+            Rect rect(i * n, j * n, 60, 60);
+            img_cut = Mat(img, rect);
+            rio_img = img_cut.clone();
+            boxes.push_back(rio_img);
+        }
+    }
+    // for (int i = 0; i < boxes.size(); ++i) {
+    //     string num = to_string(i);
+    //     imshow(num, boxes[i]);
+    // }
+    return boxes;
+}
+
+// 答案展示
+Mat showAnswer(Mat img, vector<int> index, vector<int> grading, vector<int> ans, int question, int choice) {
+    int secW = img.cols / choice;
+    int secH = img.rows / question;
+    Scalar color;
+    for (int i = 0; i < question; ++i) {
+        int sx = (index[i] * secW) + (secW / 2);
+        int sy = (i * secH) + (secH / 2);
+        if (grading[i] == 1) {
+            color = Scalar(0, 255, 0);
+        } else {
+            color = Scalar(0, 0, 255);
+            circle(img, Point((ans[i] * secW) + (secW / 2), sy), 10, Scalar(0, 255, 0), FILLED);
+        }
+        circle(img, Point(sx, sy), 20, color, FILLED);
+    }
+    return img;
+}
+
 int main() {
     img = imread(pathname);
 
@@ -133,10 +174,56 @@ int main() {
     imshow("imgGradeThre", imgGradeThre);
 
     /* 3.图形分割 */
+    boxes = splitBox(imgThre);
 
     /* 4.计算答案下标，对比正确答案 */
+    int totalPixels;
+    int myPixelVal[5][5] = {0};
+    for (int i = 0; i < 25; ++i) {
+        totalPixels = countNonZero(boxes[i]);
+        myPixelVal[i % 5][i / 5] = totalPixels;
+    }
+    for (int i = 0; i < 5; ++i) {
+        for (int j = 0; j < 5; ++j) {
+            cout << "[" << i << "," << j << "] " << myPixelVal[i][j] << " ";
+        }
+        cout << endl;
+    }
+    vector<vector<int>> brr;
+    for (int i = 0; i < 5; ++i) {
+        vector<int> arr;
+        for (int j = 0; j < 5; ++j) {
+            arr.push_back(myPixelVal[i][j]);
+        }
+        brr.push_back(arr);
+    }
+    vector<int> index;
+    for (int i = 0; i < brr.size(); ++i) {
+        auto location = max_element(brr[i].begin(), brr[i].end());
+        index.push_back((int)(location - brr[i].begin()));
+        cout << *location << " " << index[i] << endl;
+    }
+    vector<int> ans = {1, 2, 0, 1, 4};
+    vector<int> grading;
+    int rightnum = 0;
+    for (int i = 0; i < 5; ++i) {
+        if (ans[i] == index[i]) {
+            ++rightnum;
+            grading.push_back(1);
+        } else {
+            grading.push_back(0);
+        }
+        cout << grading[i] << endl;
+    }
+    int score = (double)rightnum / 5 * 100;
+    cout << "score = " << score << endl; 
 
-    /* 5.标记答案 */
+
+    /* 5.展示答案 */
+    Mat imgAns = imgWarp.clone();
+    imgAns = showAnswer(imgAns, index, grading, ans, 5, 5);
+    imshow("imgAns", imgAns);
+
 
     /* 6.评分 */
 
