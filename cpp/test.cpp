@@ -7,7 +7,7 @@ using namespace std;
 using namespace cv;
 
 string pathname = "D:\\Microsoft VS Code\\OpenCV\\cpp\\omr1.jpg";
-Mat img, imgGray, imgBlur, imgCanny, imgContours, imgWarp, imgWarpGrade;
+Mat img, imgGray, imgBlur, imgCanny, imgContours, imgWarp, imgWarpGrade, imgThre, imgWarpGray, imgWarpGradeGray, imgGradeThre;
 vector<Point> docPoint_max, docPoint_grade;
 
 vector<vector<Point>> getContours(Mat imgage) {
@@ -89,6 +89,12 @@ int main() {
     imshow("imgBlur", imgBlur);
     imshow("imgCanny", imgCanny);
 
+    // threshold(imgBlur, imgThre, 180, 255, THRESH_BINARY);
+    // imshow("imgThre", imgThre);
+    // Mat temp;
+    // threshold(imgBlur, temp, 180, 255, THRESH_BINARY_INV);
+    // imshow("temp", temp);
+
     vector<vector<Point>> contours;
     vector<vector<Point>> cPoint;
     vector<Vec4i> hierarchy;
@@ -101,7 +107,7 @@ int main() {
     drawContours(imgContours, cPoint, -1, Scalar(0, 255, 0), 2);
     imshow("imgContours", imgContours);
 
-    // 1.重新排序四个角点
+    /* 0.重新排序四个角点 */ 
     // drawPoints(img, cPoint[0], Scalar(0, 0, 200));
     // drawPoints(img, cPoint[1], Scalar(0, 0, 200));
     // imshow("img", img);
@@ -111,25 +117,32 @@ int main() {
     drawPoints(imgContours, docPoint_grade, Scalar(0, 0, 200));
     imshow("imgContours", imgContours);
 
-    // 2.仿射变换
+    /* 1.仿射变换 */
     imgWarp = getWarp(img, docPoint_max, 300, 300);
     imshow("imgWarp", imgWarp);
 
     imgWarpGrade = getWarp(img, docPoint_grade, 180, 100);
     imshow("imgWarpGrade", imgWarpGrade);    
 
+    /* 2.二值化处理 */
+    cvtColor(imgWarp, imgWarpGray, COLOR_BGR2GRAY);
+    threshold(imgWarpGray, imgThre, 180, 255, THRESH_BINARY_INV);
+    imshow("imgThre", imgThre);
+    cvtColor(imgWarpGrade, imgWarpGradeGray, COLOR_BGR2GRAY);
+    threshold(imgWarpGradeGray, imgGradeThre, 180, 255, THRESH_BINARY_INV);
+    imshow("imgGradeThre", imgGradeThre);
 
-    // 3.图形分割
+    /* 3.图形分割 */
 
-    // 4.计算答案下标，对比正确答案
+    /* 4.计算答案下标，对比正确答案 */
 
-    // 5.标记答案
+    /* 5.标记答案 */
 
-    // 6.评分
+    /* 6.评分 */
 
-    // 7.反向仿射变换
+    /* 7.反向仿射变换 */
 
-    // 8.从摄像头中读取，给答题卡评分
+    /* 8.从摄像头中读取，给答题卡评分 */
     
 
     waitKey();
