@@ -6,7 +6,7 @@
 using namespace std;
 using namespace cv;
 
-string pathname = "D:\\Microsoft VS Code\\OpenCV\\cpp\\omr1.jpg";
+string pathname = "D:\\Microsoft VS Code\\OpenCV\\cpp\\omr3.jpg";
 Mat img, imgGray, imgBlur, imgCanny, imgContours, imgWarp, imgWarpGrade, imgThre, imgWarpGray, imgWarpGradeGray, imgGradeThre;
 vector<Point> docPoint_max, docPoint_grade;
 vector<Mat> boxes;
@@ -77,6 +77,15 @@ Mat getWarp(Mat image, vector<Point> points, float w, float h) {
     return imgWarp;
 }
 
+Mat getreWarp(Mat image, vector<Point> points, float w, float h, float sizew, float sizeh) {
+    Mat imgWarp;
+    Point2f src[4] = {points[0], points[1], points[2], points[3]};
+    Point2f dst[4] = {{0.0f, 0.0f}, {w, 0.0f}, {0.0f, h}, {w, h}};
+    Mat matrix = getPerspectiveTransform(dst, src);
+    warpPerspective(image, imgWarp, matrix, Point(sizew, sizeh));
+    return imgWarp;
+}
+
 // 图像分割
 vector<Mat> splitBox(Mat img) {
     vector<Mat> boxes;
@@ -117,7 +126,22 @@ Mat showAnswer(Mat img, vector<int> index, vector<int> grading, vector<int> ans,
     return img;
 }
 
+#define CAM_BEGIN {
+#define CAM_END }
+
 int main() {
+    // 从摄像头读
+    // bool cam = true;
+    // VideoCapture cap(1);
+    // while(true) CAM_BEGIN
+    //     if (cam) {
+    //         cap.read(img);
+    //     } else {
+    //         img = imread(pathname);
+    //     }
+    
+
+    // 从图片中读
     img = imread(pathname);
 
     resize(img, img, Size(500, 500));
@@ -126,9 +150,9 @@ int main() {
     Canny(imgBlur, imgCanny, 50, 25, 3);
 
     imshow("img", img);
-    imshow("imgGray", imgGray);
-    imshow("imgBlur", imgBlur);
-    imshow("imgCanny", imgCanny);
+    // imshow("imgGray", imgGray);
+    // imshow("imgBlur", imgBlur);
+    // imshow("imgCanny", imgCanny);
 
     // threshold(imgBlur, imgThre, 180, 255, THRESH_BINARY);
     // imshow("imgThre", imgThre);
@@ -145,8 +169,15 @@ int main() {
 
     // 如何找到涂卡区的矩形轮廓
     cPoint = getContours(imgCanny);
+    
+    /* 读图片模式下将下四行注释 */
+    // if (cPoint.size() < 2) {
+    //     waitKey(1);
+    //     continue;
+    // }
+    
     drawContours(imgContours, cPoint, -1, Scalar(0, 255, 0), 2);
-    imshow("imgContours", imgContours);
+    // imshow("imgContours", imgContours);
 
     /* 0.重新排序四个角点 */ 
     // drawPoints(img, cPoint[0], Scalar(0, 0, 200));
@@ -156,22 +187,22 @@ int main() {
     docPoint_max = reorder(cPoint[1]);
     drawPoints(imgContours, docPoint_max, Scalar(0, 0, 200));
     drawPoints(imgContours, docPoint_grade, Scalar(0, 0, 200));
-    imshow("imgContours", imgContours);
+    // imshow("imgContours", imgContours);
 
     /* 1.仿射变换 */
     imgWarp = getWarp(img, docPoint_max, 300, 300);
-    imshow("imgWarp", imgWarp);
+    // imshow("imgWarp", imgWarp);
 
     imgWarpGrade = getWarp(img, docPoint_grade, 180, 100);
-    imshow("imgWarpGrade", imgWarpGrade);    
+    // imshow("imgWarpGrade", imgWarpGrade);    
 
     /* 2.二值化处理 */
     cvtColor(imgWarp, imgWarpGray, COLOR_BGR2GRAY);
     threshold(imgWarpGray, imgThre, 180, 255, THRESH_BINARY_INV);
-    imshow("imgThre", imgThre);
+    // imshow("imgThre", imgThre);
     cvtColor(imgWarpGrade, imgWarpGradeGray, COLOR_BGR2GRAY);
     threshold(imgWarpGradeGray, imgGradeThre, 180, 255, THRESH_BINARY_INV);
-    imshow("imgGradeThre", imgGradeThre);
+    // imshow("imgGradeThre", imgGradeThre);
 
     /* 3.图形分割 */
     boxes = splitBox(imgThre);
@@ -203,7 +234,7 @@ int main() {
         index.push_back((int)(location - brr[i].begin()));
         cout << *location << " " << index[i] << endl;
     }
-    vector<int> ans = {1, 2, 0, 1, 4};
+    vector<int> ans = {0, 1, 2, 3, 4};
     vector<int> grading;
     int rightnum = 0;
     for (int i = 0; i < 5; ++i) {
@@ -222,18 +253,42 @@ int main() {
     /* 5.展示答案 */
     Mat imgAns = imgWarp.clone();
     imgAns = showAnswer(imgAns, index, grading, ans, 5, 5);
-    imshow("imgAns", imgAns);
+    // imshow("imgAns", imgAns);
 
+    Mat imgDrawing(imgAns.size(), imgAns.type(), Scalar(0, 0, 0));
+    imgDrawing = showAnswer(imgDrawing, index, grading, ans, 5, 5);
+    // imshow("imgDrawing", imgDrawing);
 
-    /* 6.评分 */
+    Mat imgGradeDrawing(imgWarpGrade.size(), imgWarpGrade.type(), Scalar(0, 0, 0));
+    putText(imgGradeDrawing, to_string(score), Point(40, 80), FONT_HERSHEY_PLAIN, 5, Scalar(0, 0, 255), 4);
+    // imshow("imgGradeDrawing", imgGradeDrawing);
 
-    /* 7.反向仿射变换 */
+    /* 6.反向仿射变换 */
+    Mat imgReWarp = getreWarp(imgDrawing, docPoint_max, 300, 300, 500, 500);
+    Mat imgGradeReWarp = getreWarp(imgGradeDrawing, docPoint_grade, 180, 100, 500, 500);
+    // imshow("imgReWarp", imgReWarp);
+    // imshow("imgGradeReWarp", imgGradeReWarp);
 
-    /* 8.从摄像头中读取，给答题卡评分 */
+    /* 7.融合 */
+    Mat imgFinal;
+    addWeighted(img, 1, imgReWarp, 1, 0, imgFinal);
+    addWeighted(imgFinal, 1, imgGradeReWarp, 1, 0, imgFinal);
+    imshow("imgFinal", imgFinal);
+
     
+    /* 从摄像头读取时, waitKey(1) */
+    waitKey(0);
 
-    waitKey();
+    // CAM_END
 
     system("pause");
     return 0;
 }
+
+#undef CAM
+#undef CAM_END
+
+/*
+摄像头：
+对摄像头配置，光线环境要求较高。寻找轮廓时如果找不到要continue。并最后设置waitKey(1)
+*/
